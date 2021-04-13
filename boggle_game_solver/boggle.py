@@ -9,6 +9,9 @@ TODO:
 # we will be checking if a word exists by searching through it
 FILE = 'dictionary.txt'
 
+# Global Variable
+prefix_dict = {}
+
 
 def main():
 	"""
@@ -35,20 +38,20 @@ def find_word(all_row, word, word_lst):
 	:param word_lst: the list stored the words found in boggle
 	:return: the list of the finding words
 	"""
-	word_dic = read_dictionary()
+	read_dictionary()
 	for y in range(4):
 		for x in range(4):
 			start_x = x
 			start_y = y
 			cor_lst = [(start_x, start_y)]
 			word += all_row[start_x][start_y]
-			find_word_helper(all_row, word, word_lst, start_x, start_y, cor_lst, word_dic)
+			find_word_helper(all_row, word, word_lst, start_x, start_y, cor_lst)
 			cor_lst.pop()
 			word = word[:len(word) - 1]
 	return word_lst
 
 
-def find_word_helper(all_row, word, word_lst, start_x, start_y, cor_lst, word_dic):
+def find_word_helper(all_row, word, word_lst, start_x, start_y, cor_lst):
 	"""
 	A helper for helping the function find_word to add letters next to the fist letter.
 	:param all_row: the list stored 4 input string row
@@ -57,11 +60,10 @@ def find_word_helper(all_row, word, word_lst, start_x, start_y, cor_lst, word_di
 	:param start_x: the order of the row
 	:param start_y: the order of the letter in the chosen row
 	:param cor_lst: the list stored the chosen coordinate
-	:param word_dic: the word list of the dictionary
 
 	"""
 	if len(word) >= 4:
-		if word in word_dic:
+		if word in prefix_dict and prefix_dict[word] is True:
 			if word not in word_lst:
 				print('Found', word)
 				word_lst.append(word)
@@ -76,8 +78,8 @@ def find_word_helper(all_row, word, word_lst, start_x, start_y, cor_lst, word_di
 						cor_lst.append((now_x, now_y))
 						letter = all_row[now_x][now_y]
 						word += letter
-						if has_prefix(word, word_dic) is True:
-							find_word_helper(all_row, word, word_lst, now_x, now_y, cor_lst, word_dic)
+						if has_prefix(word) is True:
+							find_word_helper(all_row, word, word_lst, now_x, now_y, cor_lst)
 							word = word[:len(word) - 1]
 							now_x -= i
 							now_y -= j
@@ -96,24 +98,29 @@ def read_dictionary():
 
 	:return: list of dictionary
 	"""
-	word_dic = []
+	global prefix_dict
+	prefix_dict = {}
 	with open('dictionary.txt', 'r') as f:
-		for line in f:
-			word = line.strip()
+		# remove the line breaker '\n'
+		words = f.read().splitlines()
+		for word in words:
 			if len(word) >= 4:
-				word_dic.append(word)
-	return word_dic
+				for i in range(len(word) - 1):
+					# store all prefix of word (including it self) in prefix_dict
+					prefix = word[:i + 1]
+					if prefix not in prefix_dict:
+						prefix_dict[prefix] = False
+				prefix_dict[word] = True
+	return prefix_dict
 
 
-def has_prefix(sub_s, word_dic):
+def has_prefix(sub_s):
 	"""
-	:param word_dic: the word list of the dictionary
 	:param sub_s: (str) A substring that is constructed by neighboring letters on a 4x4 square grid
 	:return: (bool) If there is any words with prefix stored in sub_s
 	"""
-	for word in word_dic:
-		if word.startswith(sub_s) is True:
-			return True
+	if sub_s in prefix_dict:
+		return True
 	return False
 
 
